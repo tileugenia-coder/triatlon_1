@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0f1923">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Triatlon Logg</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+:root{--bg:#0f1923;--surface:#172130;--surface2:#1e2d40;--border:rgba(255,255,255,0.08);--text:#e8edf2;--muted:#6b8099;--accent:#3b9eff;--swim:#3b9eff;--bike:#4caf82;--run:#ff7043;--strength:#ffd740;--brick:#ab7df8;--interval:#ff7043;--rest:#6b8099;--rad:12px;--rad-sm:8px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:480px;margin:0 auto;font-size:15px}
+.header{padding:52px 20px 16px;background:var(--surface);border-bottom:1px solid var(--border)}
+.header-top{display:flex;justify-content:space-between;align-items:flex-start}
+.app-title{font-size:22px;font-weight:600;letter-spacing:-0.5px}
+.app-sub{font-size:12px;color:var(--muted);margin-top:2px;font-family:'DM Mono',monospace}
+.race-badge{background:rgba(59,158,255,0.15);border:1px solid rgba(59,158,255,0.3);color:var(--accent);font-size:11px;font-family:'DM Mono',monospace;padding:4px 10px;border-radius:99px;white-space:nowrap}
+.nav{display:flex;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+.nav-btn{flex:1;padding:12px 4px;font-size:12px;font-weight:500;color:var(--muted);background:none;border:none;cursor:pointer;letter-spacing:0.02em;transition:color .15s;border-bottom:2px solid transparent}
+.nav-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.panel{display:none;padding:20px}.panel.active{display:block}
+.form-group{margin-bottom:14px}
+label{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-bottom:6px;letter-spacing:0.06em;text-transform:uppercase}
+input,select,textarea{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--rad-sm);padding:11px 14px;font-size:15px;font-family:'DM Sans',sans-serif;appearance:none;-webkit-appearance:none}
+input:focus,select:focus,textarea:focus{outline:none;border-color:rgba(59,158,255,0.5)}
+textarea{resize:vertical;min-height:72px}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b8099' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn{display:block;width:100%;padding:14px;border-radius:var(--rad);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity .15s,transform .1s;font-family:'DM Sans',sans-serif}
+.btn:active{transform:scale(0.98);opacity:.85}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-ghost{background:var(--surface2);color:var(--muted);margin-top:8px}
+.btn-sm{display:inline-block;width:auto;padding:6px 14px;font-size:13px;font-weight:500;border-radius:var(--rad-sm);background:var(--surface2);color:var(--text);border:1px solid var(--border);cursor:pointer;font-family:'DM Sans',sans-serif}
+.type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px}
+.type-btn{padding:10px 6px;border-radius:var(--rad-sm);border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;text-align:center;transition:all .15s;font-family:'DM Sans',sans-serif}
+.type-btn .icon{font-size:18px;display:block;margin-bottom:4px}
+.type-btn.active{border-color:var(--c);color:var(--c);background:rgba(var(--cr),0.12)}
+.msg{padding:12px 16px;border-radius:var(--rad-sm);font-size:14px;margin-bottom:16px}
+.msg-ok{background:rgba(76,175,130,0.15);border:1px solid rgba(76,175,130,0.3);color:#4caf82}
+.msg-err{background:rgba(255,112,67,0.15);border:1px solid rgba(255,112,67,0.3);color:var(--run)}
+.section-title{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin:20px 0 12px}
+/* Today card */
+.today-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rad);padding:16px;margin-bottom:20px}
+.today-label{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px}
+.today-name{font-size:18px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.today-phase{font-size:11px;padding:3px 10px;border-radius:99px;background:rgba(59,158,255,0.15);color:var(--accent);font-family:'DM Mono',monospace}
+.today-dur{font-size:13px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:10px}
+.today-desc{font-size:13px;color:var(--text);line-height:1.6;white-space:pre-line;border-top:1px solid var(--border);padding-top:10px}
+.prefill-btn{display:flex;align-items:center;gap:8px;background:rgba(59,158,255,0.1);border:1px solid rgba(59,158,255,0.3);color:var(--accent);border-radius:var(--rad-sm);padding:10px 14px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;margin-top:12px;justify-content:center}
+/* Log */
+.log-entry{background:var(--surface);border:1px solid var(--border);border-radius:var(--rad);padding:14px 16px;margin-bottom:10px;display:flex;align-items:flex-start;gap:14px}
+.log-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.log-info{flex:1;min-width:0}
+.log-top{display:flex;justify-content:space-between;align-items:flex-start}
+.log-type{font-weight:600;font-size:14px}
+.log-date{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace}
+.log-meta{font-size:12px;color:var(--muted);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap}
+.log-comment{font-size:12px;color:var(--muted);margin-top:4px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.del-btn{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:0;line-height:1;flex-shrink:0}
+/* Stats */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rad);padding:14px 16px}
+.stat-label{font-size:11px;color:var(--muted);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:6px}
+.stat-val{font-size:24px;font-weight:600;font-family:'DM Mono',monospace}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rad);padding:16px;margin-bottom:14px}
+.chart-title{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:14px}
+.chart-wrap{position:relative;width:100%;height:180px}
+.ex-block{background:var(--surface2);border-radius:var(--rad-sm);padding:12px;margin-bottom:8px}
+.ex-name-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.ex-name-row input{flex:1}
+.set-row{display:grid;grid-template-columns:32px 1fr 1fr 28px;gap:6px;align-items:center;margin-bottom:6px}
+.set-num{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;text-align:center}
+.set-row input{padding:7px 8px;font-size:13px}
+.set-labels{display:grid;grid-template-columns:32px 1fr 1fr 28px;gap:6px;margin-bottom:4px}
+.set-labels span{font-size:10px;color:var(--muted);text-align:center}
+.filter-row{display:flex;gap:8px;margin-bottom:16px}
+.filter-row select{flex:1;padding:8px 12px;font-size:13px}
+.empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty-icon{font-size:36px;margin-bottom:12px}
+.week-bar{background:var(--surface2);border-radius:99px;height:6px;margin-top:12px;overflow:hidden}
+.week-bar-fill{height:100%;border-radius:99px;background:var(--accent);transition:width .5s}
+.week-info{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px;font-family:'DM Mono',monospace}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="app-title">Triatlon Logg</div>
+      <div class="app-sub">Sprint · Race: 1. august 2026</div>
+    </div>
+    <div class="race-badge" id="race-badge">...</div>
+  </div>
+  <div class="week-bar" style="margin-top:12px"><div class="week-bar-fill" id="prog-bar" style="width:0%"></div></div>
+  <div class="week-info"><span id="prog-label">Uke 1 av 14</span><span id="prog-pct">0%</span></div>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="switchTab('reg')">Registrer</button>
+  <button class="nav-btn" onclick="switchTab('uke')">Ukeplan</button>
+  <button class="nav-btn" onclick="switchTab('str')">Styrke</button>
+  <button class="nav-btn" onclick="switchTab('log')">Logg</button>
+  <button class="nav-btn" onclick="switchTab('stat')">Statistikk</button>
+</nav>
+
+<!-- REGISTRER -->
+<div class="panel active" id="panel-reg">
+  <div id="msg"></div>
+
+  <!-- Dagens økt -->
+  <div id="today-section"></div>
+
+  <div class="section-title">Type økt</div>
+  <div class="type-grid">
+    <button class="type-btn active" style="--c:var(--swim);--cr:59,158,255" data-type="swim" onclick="setType('swim')"><span class="icon">🏊</span>Svøm</button>
+    <button class="type-btn" style="--c:var(--bike);--cr:76,175,130" data-type="bike" onclick="setType('bike')"><span class="icon">🚴</span>Sykkel</button>
+    <button class="type-btn" style="--c:var(--run);--cr:255,112,67" data-type="run" onclick="setType('run')"><span class="icon">🏃</span>Løp</button>
+    <button class="type-btn" style="--c:var(--strength);--cr:255,215,64" data-type="strength" onclick="setType('strength')"><span class="icon">💪</span>Styrke</button>
+    <button class="type-btn" style="--c:var(--brick);--cr:171,125,248" data-type="brick" onclick="setType('brick')"><span class="icon">⚡</span>Brick</button>
+    <button class="type-btn" style="--c:var(--muted);--cr:107,128,153" data-type="other" onclick="setType('other')"><span class="icon">📋</span>Annet</button>
+  </div>
+
+  <div class="grid2">
+    <div class="form-group"><label>Dato</label><input type="date" id="f-date"></div>
+    <div class="form-group"><label>Varighet (min)</label><input type="number" id="f-dur" placeholder="60" min="1"></div>
+  </div>
+
+  <div id="end-fields">
+    <div class="grid2">
+      <div class="form-group"><label>Puls snitt</label><input type="number" id="f-hr" placeholder="145"></div>
+      <div class="form-group" id="dist-wrap"><label>Distanse (km)</label><input type="number" id="f-dist" placeholder="20" step="0.1"></div>
+    </div>
+    <div id="swim-extra" style="display:none"><div class="form-group"><label>Distanse (m)</label><input type="number" id="f-swim-m" placeholder="1200"></div></div>
+    <div id="run-extra" style="display:none">
+      <div class="grid2">
+        <div class="form-group"><label>Intervaltype</label><select id="f-itype"><option value="">Rolig løp</option><option value="Lavterskel">Lavterskel</option><option value="Terskel">Terskel</option></select></div>
+        <div class="form-group"><label>Arbeidstid (min)</label><input type="number" id="f-work" placeholder="24"></div>
+      </div>
+    </div>
+    <div id="bike-extra" style="display:none"><div class="form-group"><label>FTP % snitt</label><input type="number" id="f-ftp" placeholder="82"></div></div>
+  </div>
+
+  <div id="str-fields" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div class="section-title" style="margin:0">Øvelser</div>
+      <button class="btn-sm" onclick="addEx()">+ Øvelse</button>
+    </div>
+    <div id="ex-list"></div>
+  </div>
+
+  <div class="form-group"><label>Form (1–10)</label><input type="number" id="f-form" placeholder="7" min="1" max="10"></div>
+  <div class="form-group"><label>Kommentar</label><textarea id="f-comment" placeholder="Notater, observasjoner..."></textarea></div>
+  <button class="btn btn-primary" onclick="saveSession()">Lagre økt</button>
+  <button class="btn btn-ghost" onclick="clearForm()">Nullstill</button>
+</div>
+
+<!-- UKEPLAN -->
+<div class="panel" id="panel-uke">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <button class="btn-sm" onclick="changeWeek(-1)">← Forrige</button>
+    <div style="text-align:center">
+      <div style="font-size:15px;font-weight:600" id="uke-title">Uke 1</div>
+      <div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace" id="uke-phase"></div>
+    </div>
+    <button class="btn-sm" onclick="changeWeek(1)">Neste →</button>
+  </div>
+  <div id="uke-days"></div>
+</div>
+
+<!-- STYRKELOGG -->
+<div class="panel" id="panel-str">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <button class="btn-sm" onclick="changeStrWeek(-1)">&#8592; Forrige</button>
+    <div style="text-align:center">
+      <div style="font-size:15px;font-weight:600" id="str-title">Uke 1</div>
+      <div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace" id="str-phase"></div>
+    </div>
+    <button class="btn-sm" onclick="changeStrWeek(1)">Neste &#8594;</button>
+  </div>
+  <div id="str-sessions"></div>
+</div>
+
+<!-- LOGG -->
+<div class="panel" id="panel-log">
+  <div class="filter-row">
+    <select id="ft-type" onchange="renderLog()"><option value="">Alle typer</option><option value="swim">Svømming</option><option value="bike">Sykling</option><option value="run">Løping</option><option value="strength">Styrke</option><option value="brick">Brick</option><option value="interval">Intervall</option></select>
+    <select id="ft-month" onchange="renderLog()"><option value="">Alle måneder</option><option value="2026-04">Apr</option><option value="2026-05">Mai</option><option value="2026-06">Jun</option><option value="2026-07">Jul</option><option value="2026-08">Aug</option></select>
+  </div>
+  <div id="log-list"></div>
+</div>
+
+<!-- STATISTIKK -->
+<div class="panel" id="panel-stat">
+  <div class="stat-grid" id="stat-cards"></div>
+  <div class="chart-card"><div class="chart-title">Minutter per økttype</div><div class="chart-wrap"><canvas id="c-type" role="img" aria-label="Minutter per type">Treningsminutter per type.</canvas></div></div>
+  <div class="chart-card"><div class="chart-title">Form over tid</div><div class="chart-wrap"><canvas id="c-form" role="img" aria-label="Form over tid">Form over tid.</canvas></div></div>
+  <div class="chart-card"><div class="chart-title">Ukentlig volum (min)</div><div class="chart-wrap"><canvas id="c-week" role="img" aria-label="Ukentlig volum">Ukentlig volum.</canvas></div></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const SCHEDULE = [{"date": "2026-04-27", "week": 1, "phase": "FTP-test", "deload": false, "type": "swim", "name": "Svøm – klubb", "desc": "1000-1200 m teknikk og grunnlag\nALT: 1000 m - 200 m oppv, 4x100 m teknikk, 4x25 m drill, 200 m ned", "duration": 60}, {"date": "2026-04-28", "week": 1, "phase": "FTP-test", "deload": false, "type": "interval", "name": "FTP-test + Styrke 1", "desc": "FTP-TEST på sykkel: 10 min oppvarming, 20 min maksimal innsats (noter snitteffekt), 10 min nedkjoering. FTP = snitteffekt x 0.95. Deretter: Styrke 1 (overkropp/core/tåhev)", "duration": 94}, {"date": "2026-04-29", "week": 1, "phase": "FTP-test", "deload": false, "type": "rest", "name": "Hvile", "desc": "Hviledag - tøying, gåtur, mobilitet", "duration": 0}, {"date": "2026-04-30", "week": 1, "phase": "FTP-test", "deload": false, "type": "brick", "name": "Ingen økt", "desc": "Ingen overgangsøkt uke 1", "duration": 0}, {"date": "2026-05-01", "week": 1, "phase": "FTP-test", "deload": false, "type": "run", "name": "Rolig løp", "desc": "60 min rolig løp, puls 100-150 bpm", "duration": 60}, {"date": "2026-05-02", "week": 1, "phase": "FTP-test", "deload": false, "type": "strength", "name": "🏅 Lørenløpet 5 km", "desc": "Lørenløpet 5 km - 2. mai. Erstatter Styrke 2.", "duration": 50}, {"date": "2026-05-03", "week": 1, "phase": "FTP-test", "deload": false, "type": "bike", "name": "Sykkel – distanse", "desc": "40 min lett sykkel - 56-75% av FTP (restitusjon etter FTP-test)", "duration": 40}, {"date": "2026-05-04", "week": 2, "phase": "Grunnlag", "deload": false, "type": "swim", "name": "Svøm – klubb", "desc": "1000-1200 m teknikk og grunnlag\nALT: 1000 m - 200 m oppv, 4x100 m teknikk, 4x25 m drill, 200 m ned", "duration": 60}, {"date": "2026-05-05", "week": 2, "phase": "Grunnlag", "deload": false, "type": "interval", "name": "Intervall + Styrke 1", "desc": "INTERVALL FØRST [Terskel]: Oppvarming 15 min, 4x6 min (2 min pause), Nedjogging 10 min | Arbeid: 26 min | Total: 51 min. Deretter: Styrke 1 (overkropp/core/tåhev)", "duration": 96}, {"date": "2026-05-06", "week": 2, "phase": "Grunnlag", "deload": false, "type": "rest", "name": "Hvile", "desc": "Hviledag - tøying, gåtur, mobilitet", "duration": 0}, {"date": "2026-05-07", "week": 2, "phase": "Grunnlag", "deload": false, "type": "brick", "name": "Overgangsøkt", "desc": "Overgangsøkt: 30 min sykkel (76-90% av FTP), bytt raskt, 10 min løp - tren raske bein!", "duration": 40}, {"date": "2026-05-08", "week": 2, "phase": "Grunnlag", "deload": false, "type": "run", "name": "Ingen økt – 8. mai", "desc": "Ingen økt - 8. mai (dagen før Lampeland Backyard Ultra)", "duration": 0}, {"date": "2026-05-09", "week": 2, "phase": "Grunnlag", "deload": false, "type": "strength", "name": "🏅 Lampeland Backyard Ultra 18 km", "desc": "Lampeland Backyard Ultra 18 km - 9. mai. Erstatter Styrke 2.", "duration": 50}, {"date": "2026-05-10", "week": 2, "phase": "Grunnlag", "deload": false, "type": "bike", "name": "Sykkel – distanse", "desc": "55 min sykkel - 56-75% av FTP - aerob base", "duration": 55}, {"date": "2026-05-11", "week": 3, "phase": "Grunnlag", "deload": false, "type": "swim", "name": "Svøm – klubb", "desc": "1000-1200 m teknikk og grunnlag\nALT: 1000 m - 200 m oppv, 4x100 m teknikk, 4x25 m drill, 200 m ned", "duration": 60}, {"date": "2026-05-12", "week": 3, "phase": "Grunnlag", "deload": false, "type": "interval", "name": "Intervall + Styrke 1", "desc": "INTERVALL FØRST [Lavterskel]: Oppvarming 15 min, 3x9 min (90 sek pause), Nedjogging 10 min | Arbeid: 29 min | Total: 54 min. Deretter: Styrke 1 (overkropp/core/tåhev)", "duration": 99}, {"date": "2026-05-13", "week": 3, "phase": "Grunnlag", "deload": false, "type": "rest", "name": "Hvile", "desc": "Hviledag - tøying, gåtur, mobilitet", "duration": 0}, {"date": "2026-05-14", "week": 3, "phase": "Grunnlag", "deload": false, "type": "brick", "name": "Overgangsøkt", "desc": "Overgangsøkt: 30 min sykkel (76-90% av FTP), bytt raskt, 10 min løp - tren raske bein!", "duration": 40}, {"date": "2026-05-15", "week": 3, "phase": "Grunnlag", "deload": false, "type": "run", "name": "Rolig løp", "desc": "66 min rolig løp, puls 100-150 bpm", "duration": 66}, {"date": "2026-05-16", "week": 3, "phase": "Grunnlag", "deload": false, "type": "strength", "name": "Styrke 2", "desc": "Styrke 2 - underkropp/core/tåhev (boeyd kne)", "duration": 50}, {"date": "2026-05-17", "week": 3, "phase": "Grunnlag", "deload": false, "type": "bike", "name": "Sykkel – distanse", "desc": "55 min sykkel - 56-75% av FTP - aerob base", "duration": 55}, {"date": "2026-05-18", "week": 4, "phase": "Rolig uke", "deload": true, "type": "swim", "name": "Svøm – klubb", "desc": "800-1000 m rolig teknikk, lav intensitet. ROLIG UKE.\nALT: 600 m teknikk - drill og rolig", "duration": 60}, {"date": "2026-05-19", "week": 4, "phase": "Rolig uke", "deload": true, "type": "interval", "name": "Intervall + Styrke 1 ⬇", "desc": "INTERVALL FØRST [Terskel (ROLIG UKE - redusert)]: Oppvarming 15 min, 4x5 min (2 min pause), Nedjogging 10 min | Arbeid: 21 min | Total: 46 min. Deretter: Styrke 1 (overkropp/core/tåhev)", "duration": 91}, {"date": "2026-05-20", "week": 4, "phase": "Rolig uke", "deload": true, "type": "rest", "name": "Hvile", "desc": "Hviledag - tøying, gåtur, mobilitet", "duration": 0}, {"date": "2026-05-21", "week": 4, "phase": "Rolig uke", "deload": true, "type": "brick", "name": "Overgangsøkt ⬇", "desc": "25 min sykkel (56-75% av FTP), 10 min rolig løp - ROLIG UKE", "duration": 40}, {"date": "2026-05-22", "week": 4, "phase": "Rolig uke", "deload": true, "type": "run", "name": "Rolig løp ⬇", "desc": "48 min rolig løp, puls 100-150 bpm (ROLIG UKE)", "duration": 48}, {"date": "2026-05-23", "week": 4, "phase": "Rolig uke", "deload": true, "type": "strength", "name": "Styrke 2 ⬇", "desc": "Styrke 2 - redusert (ROLIG UKE): 2 sett per øvelse. Underkropp/core/tåhev.", "duration": 50}, {"date": "2026-05-24", "week": 4, "phase": "Rolig uke", "deload": true, "type": "bike", "name": "Sykkel – distanse ⬇", "desc": "40 min lett sykkel, 56-75% av FTP - ROLIG UKE", "duration": 55}, {"date": "2026-05-25", "week": 5, "phase": "Oppbygging", "deload": false, "type": "swim", "name": "Svøm – klubb", "desc": "1200-1500 m distanse + fart\nALT: 1400 m - 200 m oppv, 6x100 m, 4x50 m fart, 200 m ned", "duration": 75}, {"date": "2026-05-26", "week": 5, "phase": "Oppbygging", "deload": false, "type": "interval", "name": "Intervall + Styrke 1", "desc": "INTERVALL FØRST [Lavterskel]: Oppvarming 15 min, 4x8 min (90 sek pause), Nedjogging 10 min | Arbeid: 35 min | Total: 60 min. Deretter: Styrke 1 (overkropp/core/tåhev)", "duration": 105}, {"date": "2026-05-27", "week": 5, "phase": "Oppbygging", "deload": false, "type": "rest", "name": "Hvile", "desc": "Hviledag - tøying, gåtur, mobilitet", "duration": 0}, {"date": "2026-05-28", "week": 5, "phase": "Oppbygging", "deload": false, "type": "brick", "name": "Overgangsøkt", "desc": "Overgangsøkt: 45 min sykkel (76-90% av FTP), bytt raskt, 15 min løp - tren raske bein!", "duration": 55}, {"date": "2026-05-29", "week": 5, "phase": "Oppbygging", "deload": false, "type": "run", "name": "Rolig løp", "desc": "73 min rolig løp, puls 100-150 bpm", "duration": 73}, {"date": "2026-05-30", "week": 5, "phase": "Oppbygging", "deload": false, "type": "strength", "name": "Styrke 2", "desc": "Styrke 2 - underkropp/core/tåhev (boeyd kne)", "duration": 50}, {"date": "2026-05-31", "week": 5, "phase": "Oppbygging", "deload": false, "type": "bike", "name": "Sykkel – distanse", "desc": "65 min sykkel - 76-90% av FTP - tilsvarer race-tempo (20 km på 50-65 min)", "duration": 65}, {"date": "2026-06-01", "week": 6, "phase": "Oppbygging", "deload": false, "type": "swim", "name": "Svøm – klubb", "desc": "1200-1500 m distanse + fart\nALT: 1400 m - 200 m oppv, 6x100 m, 4x50 m fart, 200 m ned", "duration": 75}, {"date": "2026-06-02", "week": 6, "phase": "Oppbygging", "deload": false, "type": "interval", "name": "Intervall + Styrke 1", "desc": "INTERVALL FØRST [Terskel]: Oppvarming 15 min, 5x7 min (2 min pause), Nedjogging 10 min | Arbeid: 39 min | Total: 64 min. Deretter: Styrke 1 (overkropp/core/tåhev)", "duration": 109}, {"date": "2026-06-03", "week": 6, "phase": "Oppbygging", "deload": false, "type": "rest", "name": "Hvile", "desc": "Hviledag - tøying, gåtur, mobilitet", "duration": 0}, {"date": "2026-06-04", "week": 6, "phase": "Oppbygging", "deload": false, "type": "brick", "name": "Overgangsøkt", "desc": "Overgangsøkt: 45 min sykkel (76-90% av FTP), bytt raskt, 15 min løp - tren raske bein!", "duration": 55}, {"date": "2026-06-05", "week": 6, "phase": "Oppbygging", "deload": false, "type": "run", "name": "Rolig løp", "desc": "77 min rolig løp, puls 100-150 bpm", "duration": 77}, {"date": "2026-06-06", "week": 6, "phase": "Oppbygging", "deload": false, "type": "strength", "name": "Styrke 2", "desc": "Styrke 2 - underkropp/core/tåhev (boeyd kne)", "duration": 50}, {"date": "2026-06-07", "week": 6, "phase": "Oppbygging", "deload": false, "type": "bike", "name": "Sykkel – distanse", "desc": "65 min sykkel - 76-90% av FTP - tilsvarer race-tempo (20 km på 50-65 min)", "duration": 65}, {"date": "2026-06-08", "week": 7, "phase": "Oppbygging", "deload": false, "type": "swim", "name": "Svøm – klubb", "desc": "1200-1500 m distanse + fart\nALT: 1400 m - 200 m oppv, 6x100 m, 4x50 m fart, 200 m ned", "duration": 75}, {"date": "2026-06-09", "week": 7, "phase": "Oppbygging", "deload": false, "type": "interval", "name": "Intervall + Styrke 1", "desc": "INTERVALL FØRST [Lavterskel]: Oppvarming 15 min, 4x10 min (90 sek pause), Nedjogging 10 min | Arbeid: 40 min | Total: 65 min. Deretter: Styrke 1 (overkropp/core/tåhev)", "duration": 110}, {"date": "2026-06-10", "week": 7, "phase": "Oppbygging", "deload": false, "type": "rest", "name": "Hvile", "desc": "Hviledag - tøying, gåtur, mobilitet", "duration": 0}, {"date": "2026-06-11", "week": 7, "phase": "Oppbygging", "deload": false, "type": "brick", "name": "Overgangsøkt", "desc": "Overgangsøkt: 45 min sykkel (76-90% av FTP), bytt raskt, 15 min løp - tren raske bein!", "duration": 55}, {"date": "2026-06-12", "week": 7, "phase": "Oppbygging", "deload": false, "type": "run", "name": "Rolig løp", "desc": "80 min rolig løp, puls 100-150 bpm", "duration": 80}, {"date": "2026-06-13", "week": 7, "phase": "Oppbygging", "deload": false, "type": "strength", "name": "Styrke 2", "desc": "Styrke 2 - underkropp/core/tåhev (boeyd kne)", "duration": 50}, {"date": "2026-06-14", "week": 7, "phase": "Oppbygging", "deload": false, "type": "bike", "name": "Sykkel – distanse", "desc": "65 min sykkel - 76-90% av FTP - tilsvarer race-tempo (20 km på 50-65 min)", "duration": 65}, {"date": "2026-06-15", "week": 8, "phase": "Rolig uke", "deload": true, "type": "swim", "name": "Svøm – klubb", "desc": "800-1000 m rolig teknikk, lav intensitet. ROLIG UKE.\nALT: 600 m teknikk - drill og rolig", "duration": 75}, {"date": "2026-06-16", "week": 8, "phase": "Rolig uke", "deload": true, "type": "interval", "name": "Intervall + Styrke 1 ⬇", "desc": "INTERVALL FØRST [Terskel (ROLIG UKE - redusert)]: Oppvarming 15 min, 4x6 min (2 min pause), Nedjogging 10 min | Arbeid: 26 min | Total: 51 min. Deretter: Styrke 1 (overkropp/core/tåhev)", "duration": 96}, {"date": "2026-06-17", "week": 8, "phase": "Rolig uke", "deload": true, "type": "rest", "name": "Hvile", "desc": "Hviledag - tøying, gåtur, mobilitet", "duration": 0}, {"date": "2026-06-18", "week": 8, "phase": "Rolig uke", "deload": true, "type": "brick", "name": "Overgangsøkt ⬇", "desc": "25 min sykkel (56-75% av FTP), 10 min rolig løp - ROLIG UKE", "duration": 55}, {"date": "2026-06-19", "week": 8, "phase": "Rolig uke", "deload": true, "type": "run", "name": "Rolig løp ⬇", "desc": "59 min rolig løp, puls 100-150 bpm (ROLIG UKE)", "duration": 59}, {"date": "2026-06-20", "week": 8, "phase": "Rolig uke", "deload": true, "type": "strength", "name": "🏅 Sommernattsløpet 5 km", "desc": "Sommernattsløpet 5 km - 20. juni. Erstatter Styrke 2.", "duration": 50}, {"date": "2026-06-21", "week": 8, "phase": "Rolig uke", "deload": true, "type": "bike", "name": "Sykkel – distanse ⬇", "desc": "40 min lett sykkel, 56-75% av FTP - ROLIG UKE", "duration": 65}, {"date": "2026-06-22", "week": 9, "phase": "Terskelblokk", "deload": false, "type": "swim", "name": "Svøm – klubb", "desc": "1500-2000 m inkl. 2x200 m i race-fart\nALT: 1800 m - 300 m oppv, 4x200 m race-tempo, 6x50 m sprint, 200 m ned", "duration": 85}, {"date": "2026-06-23", "week": 9, "phase": "Terskelblokk", "deload": false, "type": "interval", "name": "Intervall + Styrke 1", "desc": "INTERVALL FØRST [Lavterskel]: Oppvarming 15 min, 4x10 min (90 sek pause), Nedjogging 10 min | Arbeid: 40 min | Total: 65 min. Deretter: Styrke 1 (overkropp/core/tåhev)", "duration": 110}, {"date": "2026-06-24", "week": 9, "phase": "Terskelblokk", "deload": false, "type": "rest", "name": "Hvile", "desc": "Hviledag - tøying, gåtur, mobilitet", "duration": 0}, {"date": "2026-06-25", "week": 9, "phase": "Terskelblokk", "deload": false, "type": "brick", "name": "Overgangsøkt", "desc": "Overgangsøkt: 55 min sykkel (76-90% av FTP (race-tempo 50-65 min)), bytt raskt, 20 min løp - tren raske bein!", "duration": 70}, {"date": "2026-06-26", "week": 9, "phase": "Terskelblokk", "deload": false, "type": "run", "name": "Rolig løp", "desc": "89 min rolig løp, puls 100-150 bpm", "duration": 89}, {"date": "2026-06-27", "week": 9, "phase": "Terskelblokk", "deload": false, "type": "strength", "name": "Styrke 2", "desc": "Styrke 2 - underkropp/core/tåhev (boeyd kne)", "duration": 50}, {"date": "2026-06-28", "week": 9, "phase": "Terskelblokk", "deload": false, "type": "bike", "name": "Sykkel – distanse", "desc": "75 min sykkel - 76-90% av FTP, inkl. 2x10 min 91-105% av FTP - race-spesifikk", "duration": 75}, {"date": "2026-06-29", "week": 10, "phase": "Terskelblokk", "deload": false, "type": "swim", "name": "Svøm – klubb", "desc": "1500-2000 m inkl. 2x200 m i race-fart\nALT: 1800 m - 300 m oppv, 4x200 m race-tempo, 6x50 m sprint, 200 m ned", "duration": 85}, {"date": "2026-06-30", "week": 10, "phase": "Terskelblokk", "deload": false, "type": "interval", "name": "Intervall + Styrke 1", "desc": "INTERVALL FØRST [Terskel]: Oppvarming 15 min, 5x8 min (2 min pause), Nedjogging 10 min | Arbeid: 40 min | Total: 65 min. Deretter: Styrke 1 (overkropp/core/tåhev)", "duration": 110}, {"date": "2026-07-01", "week": 10, "phase": "Terskelblokk", "deload": false, "type": "rest", "name": "Hvile", "desc": "Hviledag - tøying, gåtur, mobilitet", "duration": 0}, {"date": "2026-07-02", "week": 10, "phase": "Terskelblokk", "deload": false, "type": "brick", "name": "Overgangsøkt", "desc": "Overgangsøkt: 55 min sykkel (76-90% av FTP (race-tempo 50-65 min)), bytt raskt, 20 min løp - tren raske bein!", "duration": 70}, {"date": "2026-07-03", "week": 10, "phase": "Terskelblokk", "deload": false, "type": "run", "name": "Rolig løp", "desc": "90 min rolig løp, puls 100-150 bpm", "duration": 90}, {"date": "2026-07-04", "week": 10, "phase": "Terskelblokk", "deload": false, "type": "strength", "name": "Styrke 2", "desc": "Styrke 2 - underkropp/core/tåhev (boeyd kne)", "duration": 50}, {"date": "2026-07-05", "week": 10, "phase": "Terskelblokk", "deload": false, "type": "bike", "name": "Sykkel – distanse", "desc": "75 min sykkel - 76-90% av FTP, inkl. 2x10 min 91-105% av FTP - race-spesifikk", "duration": 75}, {"date": "2026-07-06", "week": 11, "phase": "Terskelblokk", "deload": false, "type": "swim", "name": "Svøm – klubb", "desc": "1500-2000 m inkl. 2x200 m i race-fart\nALT: 1800 m - 300 m oppv, 4x200 m race-tempo, 6x50 m sprint, 200 m ned", "duration": 85}, {"date": "2026-07-07", "week": 11, "phase": "Terskelblokk", "deload": false, "type": "interval", "name": "Intervall + Styrke 1", "desc": "INTERVALL FØRST [Lavterskel]: Oppvarming 15 min, 4x10 min (90 sek pause), Nedjogging 10 min | Arbeid: 40 min | Total: 65 min. Deretter: Styrke 1 (overkropp/core/tåhev)", "duration": 110}, {"date": "2026-07-08", "week": 11, "phase": "Terskelblokk", "deload": false, "type": "rest", "name": "Hvile", "desc": "Hviledag - tøying, gåtur, mobilitet", "duration": 0}, {"date": "2026-07-09", "week": 11, "phase": "Terskelblokk", "deload": false, "type": "brick", "name": "Overgangsøkt", "desc": "Overgangsøkt: 55 min sykkel (76-90% av FTP (race-tempo 50-65 min)), bytt raskt, 20 min løp - tren raske bein!", "duration": 70}, {"date": "2026-07-10", "week": 11, "phase": "Terskelblokk", "deload": false, "type": "run", "name": "Rolig løp", "desc": "90 min rolig løp, puls 100-150 bpm", "duration": 90}, {"date": "2026-07-11", "week": 11, "phase": "Terskelblokk", "deload": false, "type": "strength", "name": "Styrke 2", "desc": "Styrke 2 - underkropp/core/tåhev (boeyd kne)", "duration": 50}, {"date": "2026-07-12", "week": 11, "phase": "Terskelblokk", "deload": false, "type": "bike", "name": "Sykkel – distanse", "desc": "75 min sykkel - 76-90% av FTP, inkl. 2x10 min 91-105% av FTP - race-spesifikk", "duration": 75}, {"date": "2026-07-13", "week": 12, "phase": "Rolig uke", "deload": true, "type": "swim", "name": "Svøm – klubb", "desc": "800-1000 m rolig teknikk, lav intensitet. ROLIG UKE.\nALT: 600 m teknikk - drill og rolig", "duration": 85}, {"date": "2026-07-14", "week": 12, "phase": "Rolig uke", "deload": true, "type": "interval", "name": "Intervall + Styrke 1 ⬇", "desc": "INTERVALL FØRST [Terskel (ROLIG UKE - redusert)]: Oppvarming 15 min, 4x6 min (2 min pause), Nedjogging 10 min | Arbeid: 26 min | Total: 51 min. Deretter: Styrke 1 (overkropp/core/tåhev)", "duration": 96}, {"date": "2026-07-15", "week": 12, "phase": "Rolig uke", "deload": true, "type": "rest", "name": "Hvile", "desc": "Hviledag - tøying, gåtur, mobilitet", "duration": 0}, {"date": "2026-07-16", "week": 12, "phase": "Rolig uke", "deload": true, "type": "brick", "name": "Overgangsøkt ⬇", "desc": "25 min sykkel (56-75% av FTP), 10 min rolig løp - ROLIG UKE", "duration": 70}, {"date": "2026-07-17", "week": 12, "phase": "Rolig uke", "deload": true, "type": "run", "name": "Rolig løp ⬇", "desc": "63 min rolig løp, puls 100-150 bpm (ROLIG UKE)", "duration": 63}, {"date": "2026-07-18", "week": 12, "phase": "Rolig uke", "deload": true, "type": "strength", "name": "Styrke 2 ⬇", "desc": "Styrke 2 - redusert (ROLIG UKE): 2 sett per øvelse. Underkropp/core/tåhev.", "duration": 50}, {"date": "2026-07-19", "week": 12, "phase": "Rolig uke", "deload": true, "type": "bike", "name": "Sykkel – distanse ⬇", "desc": "40 min lett sykkel, 56-75% av FTP - ROLIG UKE", "duration": 75}, {"date": "2026-07-20", "week": 13, "phase": "Topping", "deload": false, "type": "swim", "name": "Svøm – klubb", "desc": "750-1000 m race-fart + teknikk (speil race-distansen)\nALT: 600 m - 200 m oppvarming, 4x50 m race-fart, 200 m nedsvoemming", "duration": 50}, {"date": "2026-07-21", "week": 13, "phase": "Topping", "deload": false, "type": "interval", "name": "Intervall + Styrke 1", "desc": "INTERVALL FØRST [Lavterskel]: Oppvarming 15 min, 4x10 min (90 sek pause), Nedjogging 10 min | Arbeid: 40 min | Total: 65 min. Deretter: Styrke 1 (overkropp/core/tåhev)", "duration": 110}, {"date": "2026-07-22", "week": 13, "phase": "Topping", "deload": false, "type": "rest", "name": "Hvile", "desc": "Hviledag - tøying, gåtur, mobilitet", "duration": 0}, {"date": "2026-07-23", "week": 13, "phase": "Topping", "deload": false, "type": "brick", "name": "Overgangsøkt", "desc": "30 min sykkel (56-75% av FTP), 10 min rolig løp - NEDTRAPPING", "duration": 40}, {"date": "2026-07-24", "week": 13, "phase": "Topping", "deload": false, "type": "run", "name": "Rolig løp", "desc": "90 min rolig løp, puls 100-150 bpm (NEDTRAPPING)", "duration": 90}, {"date": "2026-07-25", "week": 13, "phase": "Topping", "deload": false, "type": "strength", "name": "Styrke 2", "desc": "30 min lett Styrke 2 - kroppsvekt (NEDTRAPPING)", "duration": 30}, {"date": "2026-07-26", "week": 13, "phase": "Topping", "deload": false, "type": "bike", "name": "Sykkel – distanse", "desc": "45 min sykkel - 56-75% av FTP - NEDTRAPPING", "duration": 45}, {"date": "2026-07-27", "week": 14, "phase": "Konkurranseuke", "deload": false, "type": "swim", "name": "Svøm – klubb", "desc": "600-750 m lett aktivering, 2x100 m race-fart. Kjenn vannet, ikke trett deg ut.\nALT: 400 m rolig frisvoemming", "duration": 50}, {"date": "2026-07-28", "week": 14, "phase": "Konkurranseuke", "deload": false, "type": "interval", "name": "Intervall + Styrke 1", "desc": "KONKURRANSEUKE - Ingen intervaller. 20 min rolig aktiveringsjogg + 4x100 m strides", "duration": 110}, {"date": "2026-07-29", "week": 14, "phase": "Konkurranseuke", "deload": false, "type": "rest", "name": "Hvile", "desc": "Hviledag - tøying, gåtur, mobilitet", "duration": 0}, {"date": "2026-07-30", "week": 14, "phase": "Konkurranseuke", "deload": false, "type": "brick", "name": "Overgangsøkt", "desc": "20 min lett aktivering sykkel (56-75% FTP) + 5 min rolig lop", "duration": 40}, {"date": "2026-07-31", "week": 14, "phase": "Konkurranseuke", "deload": false, "type": "run", "name": "🏁 RACE", "desc": "15 min lett aktiveringsjogg - ingen belastning", "duration": 0}, {"date": "2026-08-01", "week": 14, "phase": "Konkurranseuke", "deload": false, "type": "strength", "name": "🏁 Konkurransedag", "desc": "Konkurransedag - 1. august! 750 m svøm, 20 km sykkel, 5 km lop!", "duration": 30}, {"date": "2026-08-02", "week": 14, "phase": "Konkurranseuke", "deload": false, "type": "bike", "name": "Hvil", "desc": "Hvil eller maks 20 min lett sykkel. RACE: 1. august!", "duration": 45}];
+const STRENGTH_LOG = [{"date": "2026-04-28", "week": 1, "phase": "FTP-test", "deload": false, "session": "Styrke 1 - Tirsdag", "exercises": [{"name": "Lat pulldown", "sets": 3, "reps": "8-12 reps"}, {"name": "Skulderpress", "sets": 3, "reps": "8-12 reps"}, {"name": "Roing (kabelmaskin)", "sets": 3, "reps": "8-12 reps"}, {"name": "Russian twist med vekt", "sets": 3, "reps": "8-12 reps"}, {"name": "Planke", "sets": 3, "reps": "45 sek"}, {"name": "Tahev - rett kne", "sets": 3, "reps": "10-15 reps"}]}, {"date": "2026-05-05", "week": 2, "phase": "Grunnlag", "deload": false, "session": "Styrke 1 - Tirsdag", "exercises": [{"name": "Lat pulldown", "sets": 3, "reps": "8-12 reps"}, {"name": "Skulderpress", "sets": 3, "reps": "8-12 reps"}, {"name": "Roing (kabelmaskin)", "sets": 3, "reps": "8-12 reps"}, {"name": "Russian twist med vekt", "sets": 3, "reps": "8-12 reps"}, {"name": "Planke", "sets": 3, "reps": "45 sek"}, {"name": "Tahev - rett kne", "sets": 3, "reps": "10-15 reps"}]}, {"date": "2026-05-12", "week": 3, "phase": "Grunnlag", "deload": false, "session": "Styrke 1 - Tirsdag", "exercises": [{"name": "Lat pulldown", "sets": 3, "reps": "8-12 reps"}, {"name": "Skulderpress", "sets": 3, "reps": "8-12 reps"}, {"name": "Roing (kabelmaskin)", "sets": 3, "reps": "8-12 reps"}, {"name": "Russian twist med vekt", "sets": 3, "reps": "8-12 reps"}, {"name": "Planke", "sets": 3, "reps": "45 sek"}, {"name": "Tahev - rett kne", "sets": 3, "reps": "10-15 reps"}]}, {"date": "2026-05-16", "week": 3, "phase": "Grunnlag", "deload": false, "session": "Styrke 2 - Lordag", "exercises": [{"name": "Kneboe (Smith)", "sets": 4, "reps": "6-8 reps"}, {"name": "Rumensk markloeft", "sets": 3, "reps": "8-12 reps"}, {"name": "Bulgarsk splittkneboy", "sets": 3, "reps": "8-12 reps"}, {"name": "Nordic curl", "sets": 3, "reps": "8-12 reps"}, {"name": "Russian twist med vekt", "sets": 3, "reps": "8-12 reps"}, {"name": "Planke", "sets": 3, "reps": "45 sek"}, {"name": "Leg curl (maskin)", "sets": 3, "reps": "10-15 reps"}, {"name": "Tahev - boyd kne", "sets": 3, "reps": "10-15 reps"}]}, {"date": "2026-05-19", "week": 4, "phase": "Rolig uke", "deload": true, "session": "Styrke 1 - Tirsdag", "exercises": [{"name": "Lat pulldown", "sets": 2, "reps": "8-12 reps"}, {"name": "Skulderpress", "sets": 2, "reps": "8-12 reps"}, {"name": "Roing (kabelmaskin)", "sets": 2, "reps": "8-12 reps"}, {"name": "Russian twist med vekt", "sets": 2, "reps": "8-12 reps"}, {"name": "Planke", "sets": 2, "reps": "45 sek"}, {"name": "Tahev - rett kne", "sets": 2, "reps": "10-15 reps"}]}, {"date": "2026-05-23", "week": 4, "phase": "Rolig uke", "deload": true, "session": "Styrke 2 - Lordag", "exercises": [{"name": "Kneboe (Smith)", "sets": 3, "reps": "6-8 reps"}, {"name": "Rumensk markloeft", "sets": 2, "reps": "8-12 reps"}, {"name": "Bulgarsk splittkneboy", "sets": 2, "reps": "8-12 reps"}, {"name": "Nordic curl", "sets": 2, "reps": "8-12 reps"}, {"name": "Russian twist med vekt", "sets": 2, "reps": "8-12 reps"}, {"name": "Planke", "sets": 2, "reps": "45 sek"}, {"name": "Leg curl (maskin)", "sets": 2, "reps": "10-15 reps"}, {"name": "Tahev - boyd kne", "sets": 2, "reps": "10-15 reps"}]}, {"date": "2026-05-26", "week": 5, "phase": "Oppbygging", "deload": false, "session": "Styrke 1 - Tirsdag", "exercises": [{"name": "Nedtrekk (lat pulldown)", "sets": 4, "reps": "6-8 reps"}, {"name": "Hantelroing", "sets": 3, "reps": "8-12 reps"}, {"name": "Skulderpress (hantel)", "sets": 3, "reps": "8-12 reps"}, {"name": "Kabelmaskin woodchop", "sets": 3, "reps": "8-12 reps"}, {"name": "Ab-wheel", "sets": 3, "reps": "8-12 reps"}, {"name": "Tahev - rett kne", "sets": 4, "reps": "10-15 reps"}]}, {"date": "2026-05-30", "week": 5, "phase": "Oppbygging", "deload": false, "session": "Styrke 2 - Lordag", "exercises": [{"name": "Ettbens kneboy", "sets": 4, "reps": "6-8 reps"}, {"name": "Rumensk markloeft (ettbens)", "sets": 3, "reps": "8-12 reps"}, {"name": "Nordic curl", "sets": 4, "reps": "6-8 reps"}, {"name": "Step-up med drivarm", "sets": 3, "reps": "8-12 reps"}, {"name": "Pallof press", "sets": 3, "reps": "8-12 reps"}, {"name": "Ab-wheel", "sets": 3, "reps": "8-12 reps"}, {"name": "Leg curl (maskin)", "sets": 3, "reps": "10-15 reps"}, {"name": "Tahev - boyd kne", "sets": 4, "reps": "10-15 reps"}]}, {"date": "2026-06-02", "week": 6, "phase": "Oppbygging", "deload": false, "session": "Styrke 1 - Tirsdag", "exercises": [{"name": "Nedtrekk (lat pulldown)", "sets": 4, "reps": "6-8 reps"}, {"name": "Hantelroing", "sets": 3, "reps": "8-12 reps"}, {"name": "Skulderpress (hantel)", "sets": 3, "reps": "8-12 reps"}, {"name": "Kabelmaskin woodchop", "sets": 3, "reps": "8-12 reps"}, {"name": "Ab-wheel", "sets": 3, "reps": "8-12 reps"}, {"name": "Tahev - rett kne", "sets": 4, "reps": "10-15 reps"}]}, {"date": "2026-06-06", "week": 6, "phase": "Oppbygging", "deload": false, "session": "Styrke 2 - Lordag", "exercises": [{"name": "Ettbens kneboy", "sets": 4, "reps": "6-8 reps"}, {"name": "Rumensk markloeft (ettbens)", "sets": 3, "reps": "8-12 reps"}, {"name": "Nordic curl", "sets": 4, "reps": "6-8 reps"}, {"name": "Step-up med drivarm", "sets": 3, "reps": "8-12 reps"}, {"name": "Pallof press", "sets": 3, "reps": "8-12 reps"}, {"name": "Ab-wheel", "sets": 3, "reps": "8-12 reps"}, {"name": "Leg curl (maskin)", "sets": 3, "reps": "10-15 reps"}, {"name": "Tahev - boyd kne", "sets": 4, "reps": "10-15 reps"}]}, {"date": "2026-06-09", "week": 7, "phase": "Oppbygging", "deload": false, "session": "Styrke 1 - Tirsdag", "exercises": [{"name": "Nedtrekk (lat pulldown)", "sets": 4, "reps": "6-8 reps"}, {"name": "Hantelroing", "sets": 3, "reps": "8-12 reps"}, {"name": "Skulderpress (hantel)", "sets": 3, "reps": "8-12 reps"}, {"name": "Kabelmaskin woodchop", "sets": 3, "reps": "8-12 reps"}, {"name": "Ab-wheel", "sets": 3, "reps": "8-12 reps"}, {"name": "Tahev - rett kne", "sets": 4, "reps": "10-15 reps"}]}, {"date": "2026-06-13", "week": 7, "phase": "Oppbygging", "deload": false, "session": "Styrke 2 - Lordag", "exercises": [{"name": "Ettbens kneboy", "sets": 4, "reps": "6-8 reps"}, {"name": "Rumensk markloeft (ettbens)", "sets": 3, "reps": "8-12 reps"}, {"name": "Nordic curl", "sets": 4, "reps": "6-8 reps"}, {"name": "Step-up med drivarm", "sets": 3, "reps": "8-12 reps"}, {"name": "Pallof press", "sets": 3, "reps": "8-12 reps"}, {"name": "Ab-wheel", "sets": 3, "reps": "8-12 reps"}, {"name": "Leg curl (maskin)", "sets": 3, "reps": "10-15 reps"}, {"name": "Tahev - boyd kne", "sets": 4, "reps": "10-15 reps"}]}, {"date": "2026-06-16", "week": 8, "phase": "Rolig uke", "deload": true, "session": "Styrke 1 - Tirsdag", "exercises": [{"name": "Nedtrekk (lat pulldown)", "sets": 3, "reps": "6-8 reps"}, {"name": "Hantelroing", "sets": 2, "reps": "8-12 reps"}, {"name": "Skulderpress (hantel)", "sets": 2, "reps": "8-12 reps"}, {"name": "Kabelmaskin woodchop", "sets": 2, "reps": "8-12 reps"}, {"name": "Ab-wheel", "sets": 2, "reps": "8-12 reps"}, {"name": "Tahev - rett kne", "sets": 3, "reps": "10-15 reps"}]}, {"date": "2026-06-23", "week": 9, "phase": "Terskelblokk", "deload": false, "session": "Styrke 1 - Tirsdag", "exercises": [{"name": "Nedtrekk (lat pulldown)", "sets": 4, "reps": "6-8 reps"}, {"name": "Eksplosiv roing", "sets": 4, "reps": "6-8 reps"}, {"name": "Skulderpress (staende)", "sets": 3, "reps": "6-8 reps"}, {"name": "Pallof press", "sets": 3, "reps": "8-12 reps"}, {"name": "Tung planke m/drag", "sets": 3, "reps": "45 sek"}, {"name": "Tahev - rett kne", "sets": 4, "reps": "10-15 reps"}]}, {"date": "2026-06-27", "week": 9, "phase": "Terskelblokk", "deload": false, "session": "Styrke 2 - Lordag", "exercises": [{"name": "Kneboy (Smith) - tung", "sets": 4, "reps": "4-6 reps"}, {"name": "Splitt kneboy (Bulgarian)", "sets": 4, "reps": "6-8 reps"}, {"name": "Nordic curl", "sets": 4, "reps": "6-8 reps"}, {"name": "Medball rotasjonskast", "sets": 4, "reps": "8-12 reps"}, {"name": "Tung planke m/drag", "sets": 3, "reps": "45 sek"}, {"name": "L-sit / V-sit hold", "sets": 3, "reps": "20 sek"}, {"name": "Leg curl (maskin)", "sets": 3, "reps": "10-15 reps"}, {"name": "Tahev - boyd kne", "sets": 4, "reps": "10-15 reps"}]}, {"date": "2026-06-30", "week": 10, "phase": "Terskelblokk", "deload": false, "session": "Styrke 1 - Tirsdag", "exercises": [{"name": "Nedtrekk (lat pulldown)", "sets": 4, "reps": "6-8 reps"}, {"name": "Eksplosiv roing", "sets": 4, "reps": "6-8 reps"}, {"name": "Skulderpress (staende)", "sets": 3, "reps": "6-8 reps"}, {"name": "Pallof press", "sets": 3, "reps": "8-12 reps"}, {"name": "Tung planke m/drag", "sets": 3, "reps": "45 sek"}, {"name": "Tahev - rett kne", "sets": 4, "reps": "10-15 reps"}]}, {"date": "2026-07-04", "week": 10, "phase": "Terskelblokk", "deload": false, "session": "Styrke 2 - Lordag", "exercises": [{"name": "Kneboy (Smith) - tung", "sets": 4, "reps": "4-6 reps"}, {"name": "Splitt kneboy (Bulgarian)", "sets": 4, "reps": "6-8 reps"}, {"name": "Nordic curl", "sets": 4, "reps": "6-8 reps"}, {"name": "Medball rotasjonskast", "sets": 4, "reps": "8-12 reps"}, {"name": "Tung planke m/drag", "sets": 3, "reps": "45 sek"}, {"name": "L-sit / V-sit hold", "sets": 3, "reps": "20 sek"}, {"name": "Leg curl (maskin)", "sets": 3, "reps": "10-15 reps"}, {"name": "Tahev - boyd kne", "sets": 4, "reps": "10-15 reps"}]}, {"date": "2026-07-07", "week": 11, "phase": "Terskelblokk", "deload": false, "session": "Styrke 1 - Tirsdag", "exercises": [{"name": "Nedtrekk (lat pulldown)", "sets": 4, "reps": "6-8 reps"}, {"name": "Eksplosiv roing", "sets": 4, "reps": "6-8 reps"}, {"name": "Skulderpress (staende)", "sets": 3, "reps": "6-8 reps"}, {"name": "Pallof press", "sets": 3, "reps": "8-12 reps"}, {"name": "Tung planke m/drag", "sets": 3, "reps": "45 sek"}, {"name": "Tahev - rett kne", "sets": 4, "reps": "10-15 reps"}]}, {"date": "2026-07-11", "week": 11, "phase": "Terskelblokk", "deload": false, "session": "Styrke 2 - Lordag", "exercises": [{"name": "Kneboy (Smith) - tung", "sets": 4, "reps": "4-6 reps"}, {"name": "Splitt kneboy (Bulgarian)", "sets": 4, "reps": "6-8 reps"}, {"name": "Nordic curl", "sets": 4, "reps": "6-8 reps"}, {"name": "Medball rotasjonskast", "sets": 4, "reps": "8-12 reps"}, {"name": "Tung planke m/drag", "sets": 3, "reps": "45 sek"}, {"name": "L-sit / V-sit hold", "sets": 3, "reps": "20 sek"}, {"name": "Leg curl (maskin)", "sets": 3, "reps": "10-15 reps"}, {"name": "Tahev - boyd kne", "sets": 4, "reps": "10-15 reps"}]}, {"date": "2026-07-14", "week": 12, "phase": "Rolig uke", "deload": true, "session": "Styrke 1 - Tirsdag", "exercises": [{"name": "Nedtrekk (lat pulldown)", "sets": 3, "reps": "6-8 reps"}, {"name": "Eksplosiv roing", "sets": 3, "reps": "6-8 reps"}, {"name": "Skulderpress (staende)", "sets": 2, "reps": "6-8 reps"}, {"name": "Pallof press", "sets": 2, "reps": "8-12 reps"}, {"name": "Tung planke m/drag", "sets": 2, "reps": "45 sek"}, {"name": "Tahev - rett kne", "sets": 3, "reps": "10-15 reps"}]}, {"date": "2026-07-18", "week": 12, "phase": "Rolig uke", "deload": true, "session": "Styrke 2 - Lordag", "exercises": [{"name": "Kneboy (Smith) - tung", "sets": 3, "reps": "4-6 reps"}, {"name": "Splitt kneboy (Bulgarian)", "sets": 3, "reps": "6-8 reps"}, {"name": "Nordic curl", "sets": 3, "reps": "6-8 reps"}, {"name": "Medball rotasjonskast", "sets": 3, "reps": "8-12 reps"}, {"name": "Tung planke m/drag", "sets": 2, "reps": "45 sek"}, {"name": "L-sit / V-sit hold", "sets": 2, "reps": "20 sek"}, {"name": "Leg curl (maskin)", "sets": 2, "reps": "10-15 reps"}, {"name": "Tahev - boyd kne", "sets": 3, "reps": "10-15 reps"}]}, {"date": "2026-07-21", "week": 13, "phase": "Topping", "deload": false, "session": "Styrke 1 - Tirsdag", "exercises": [{"name": "Lat pulldown", "sets": 2, "reps": "8-12 reps"}, {"name": "Skulderpress", "sets": 2, "reps": "8-12 reps"}, {"name": "Russian twist med vekt", "sets": 2, "reps": "8-12 reps"}, {"name": "Planke", "sets": 2, "reps": "40 sek"}, {"name": "Tahev - rett kne", "sets": 2, "reps": "10-15 reps"}]}, {"date": "2026-07-25", "week": 13, "phase": "Topping", "deload": false, "session": "Styrke 2 - Lordag", "exercises": [{"name": "Kneboy (Smith)", "sets": 2, "reps": "6-8 reps"}, {"name": "Rumensk markloeft", "sets": 2, "reps": "8-12 reps"}, {"name": "Nordic curl", "sets": 2, "reps": "6-8 reps"}, {"name": "Russian twist med vekt", "sets": 2, "reps": "8-12 reps"}, {"name": "Planke", "sets": 2, "reps": "40 sek"}, {"name": "Tahev - boyd kne", "sets": 2, "reps": "10-15 reps"}]}, {"date": "2026-07-28", "week": 14, "phase": "Konkurranseuke", "deload": false, "session": "Styrke 1 - Tirsdag", "exercises": [{"name": "Armhev (kroppsvekt)", "sets": 1, "reps": "10-15 reps"}, {"name": "Skulderrotasjon (kabelmaskin)", "sets": 1, "reps": "10-15 reps"}, {"name": "Planke", "sets": 1, "reps": "30 sek"}]}];
+const TYPES = {swim:'Svømming',bike:'Sykling',run:'Løping',strength:'Styrke',brick:'Brick',interval:'Intervall+Styrke',rest:'Hvile',other:'Annet'};
+const COLORS = {swim:'#3b9eff',bike:'#4caf82',run:'#ff7043',strength:'#ffd740',brick:'#ab7df8',interval:'#ff7043',rest:'#6b8099',other:'#6b8099'};
+const RACE = new Date('2026-08-01');
+let sessions = JSON.parse(localStorage.getItem('triatlon-sessions')||'[]');
+let currentType = 'swim';
+let exCount = 0;
+let charts = {};
+
+function today() { return new Date().toISOString().split('T')[0]; }
+
+function getTodaySession() {
+  const t = today();
+  // Exact match first
+  const exact = SCHEDULE.find(s => s.date === t);
+  if (exact) return {session: exact, label: 'Planlagt i dag'};
+  // Next upcoming session
+  const upcoming = SCHEDULE.filter(s => s.date > t && s.type !== 'rest');
+  if (upcoming.length) {
+    const next = upcoming[0];
+    const d = new Date(next.date); const now = new Date(t);
+    const diff = Math.round((d - now) / 86400000);
+    const label = diff === 1 ? 'Neste økt – i morgen' : `Neste økt – om ${diff} dager`;
+    return {session: next, label};
+  }
+  return null;
+}
+
+function init() {
+  document.getElementById('f-date').value = today();
+  updateRaceBadge();
+  renderTodayCard();
+  addEx();
+}
+
+function updateRaceBadge() {
+  const days = Math.max(0, Math.round((RACE - new Date()) / 86400000));
+  const start = new Date('2026-04-27');
+  const total = Math.round((RACE - start) / 86400000);
+  const elapsed = Math.min(total, Math.round((new Date() - start) / 86400000));
+  const pct = Math.max(0, Math.min(100, Math.round(elapsed / total * 100)));
+  document.getElementById('race-badge').textContent = days > 0 ? days + ' dager igjen' : '🏁 Race dag!';
+  document.getElementById('prog-bar').style.width = pct + '%';
+  document.getElementById('prog-pct').textContent = pct + '%';
+  const week = Math.max(1, Math.min(14, Math.ceil(elapsed / 7)));
+  document.getElementById('prog-label').textContent = 'Uke ' + week + ' av 14';
+}
+
+function renderTodayCard() {
+  const result = getTodaySession();
+  const el = document.getElementById('today-section');
+  if (!result) { el.innerHTML = '<div class="today-card"><div class="today-label">Program ferdig</div><div class="today-name">🏁 Race gjennomført!</div></div>'; return; }
+  const {session: s, label} = result;
+  const col = COLORS[s.type] || '#6b8099';
+  const isRest = s.type === 'rest';
+  const isToday = s.date === today();
+  el.innerHTML = `<div class="today-card" style="border-left:3px solid ${col}">
+    <div class="today-label">${label}</div>
+    <div class="today-name">${s.name} <span class="today-phase">${s.phase}${s.deload?' · Rolig uke':''}</span></div>
+    <div class="today-dur">${s.date.split('-').reverse().join('.')} ${s.duration ? '· ca. ' + s.duration + ' min' : ''}</div>
+    <div class="today-desc">${s.desc}</div>
+    ${!isRest ? `<button class="prefill-btn" onclick="prefillFromPlan()">Fyll inn fra plan ↗</button>` : ''}
+  </div>`;
+}
+
+function prefillFromPlan() {
+  const result = getTodaySession();
+  if (!result) return;
+  const s = result.session;
+  document.getElementById('f-date').value = s.date;
+  document.getElementById('f-dur').value = s.duration || '';
+  const typeMap = {'swim':'swim','bike':'bike','run':'run','strength':'strength','brick':'brick','interval':'run','rest':'other'};
+  setType(typeMap[s.type] || 'other');
+  window.scrollTo(0, document.getElementById('panel-reg').offsetTop + 200);
+}
+
+function switchTab(t) {
+  document.querySelectorAll('.nav-btn').forEach((b,i)=>b.classList.toggle('active',['reg','uke','str','log','stat'][i]===t));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+t).classList.add('active');
+  if(t==='uke') renderWeekPlan();
+  if(t==='str') renderStrengthLog();
+  if(t==='log') renderLog();
+  if(t==='stat') renderStats();
+}
+
+function setType(t) {
+  currentType = t;
+  document.querySelectorAll('.type-btn').forEach(b=>b.classList.toggle('active',b.dataset.type===t));
+  const isStr = t==='strength';
+  document.getElementById('end-fields').style.display = isStr?'none':'block';
+  document.getElementById('str-fields').style.display = isStr?'block':'none';
+  document.getElementById('swim-extra').style.display = t==='swim'?'block':'none';
+  document.getElementById('run-extra').style.display = t==='run'?'block':'none';
+  document.getElementById('bike-extra').style.display = t==='bike'?'block':'none';
+  document.getElementById('dist-wrap').style.display = t==='swim'?'none':'block';
+}
+
+function addEx() {
+  exCount++;
+  const id = 'ex'+exCount;
+  const div = document.createElement('div');
+  div.className='ex-block'; div.id=id;
+  div.innerHTML=`<div class="ex-name-row"><input placeholder="Øvelse (f.eks. Knebøy Smith)"><button class="btn-sm" onclick="addSet('${id}')">+ Sett</button><button class="del-btn" onclick="document.getElementById('${id}').remove()">✕</button></div><div class="set-labels"><span></span><span>Planl.</span><span>Reps</span><span>Kg</span><span></span></div><div class="sets-${id}"></div>`;
+  document.getElementById('ex-list').appendChild(div);
+  addSet(id);
+}
+
+function addSet(exId) {
+  const c = document.querySelector('.sets-'+exId);
+  const n = c.children.length+1;
+  const row = document.createElement('div');
+  row.className='set-row';
+  row.innerHTML=`<span class="set-num">${n}</span><input type="number" placeholder="8-12"><input type="number" placeholder="0"><input type="number" placeholder="0" step="0.5"><button class="del-btn" onclick="this.parentElement.remove()">✕</button>`;
+  c.appendChild(row);
+}
+
+function showMsg(txt, ok=true) {
+  document.getElementById('msg').innerHTML=`<div class="msg ${ok?'msg-ok':'msg-err'}">${txt}</div>`;
+  setTimeout(()=>{document.getElementById('msg').innerHTML='';},3000);
+}
+
+function saveSession() {
+  const date=document.getElementById('f-date').value;
+  const dur=parseInt(document.getElementById('f-dur').value)||0;
+  if(!date||!dur){showMsg('Fyll inn dato og varighet',false);return;}
+  const s={id:Date.now(),date,type:currentType,duration:dur,
+    form:parseInt(document.getElementById('f-form').value)||null,
+    hr:parseInt(document.getElementById('f-hr').value)||null,
+    comment:document.getElementById('f-comment').value.trim()};
+  if(currentType==='swim') s.swimDist=parseInt(document.getElementById('f-swim-m').value)||null;
+  if(currentType==='bike'){s.dist=parseFloat(document.getElementById('f-dist').value)||null;s.ftp=parseInt(document.getElementById('f-ftp').value)||null;}
+  if(currentType==='run'){s.dist=parseFloat(document.getElementById('f-dist').value)||null;s.itype=document.getElementById('f-itype').value;s.work=parseInt(document.getElementById('f-work').value)||null;}
+  if(currentType==='brick') s.dist=parseFloat(document.getElementById('f-dist').value)||null;
+  if(currentType==='strength'){
+    s.exercises=[];
+    document.querySelectorAll('.ex-block').forEach(b=>{
+      const name=b.querySelector('input').value.trim(); if(!name) return;
+      const sets=[]; b.querySelectorAll('.set-row').forEach(r=>{const ins=r.querySelectorAll('input');sets.push({planned:ins[0].value,reps:ins[1].value,kg:ins[2].value});});
+      s.exercises.push({name,sets});
+    });
+  }
+  sessions.unshift(s);
+  localStorage.setItem('triatlon-sessions',JSON.stringify(sessions));
+  showMsg('✓ Økt lagret!');
+  clearForm();
+}
+
+function clearForm() {
+  ['f-dur','f-hr','f-dist','f-swim-m','f-work','f-ftp','f-form','f-comment'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('f-date').value=today();
+  document.getElementById('ex-list').innerHTML=''; exCount=0; addEx();
+}
+
+function renderLog() {
+  const tf=document.getElementById('ft-type').value;
+  const mf=document.getElementById('ft-month').value;
+  let data=sessions.filter(s=>{if(tf&&s.type!==tf)return false;if(mf&&!s.date.startsWith(mf))return false;return true;});
+  const el=document.getElementById('log-list');
+  if(!data.length){el.innerHTML='<div class="empty"><div class="empty-icon">📭</div>Ingen økter ennå</div>';return;}
+  el.innerHTML=data.map(s=>{
+    const col=COLORS[s.type]||'#6b8099';
+    const metas=[];
+    if(s.duration) metas.push(s.duration+'min');
+    if(s.swimDist) metas.push(s.swimDist+'m');
+    if(s.dist) metas.push(s.dist+'km');
+    if(s.hr) metas.push(s.hr+'bpm');
+    if(s.ftp) metas.push('FTP '+s.ftp+'%');
+    if(s.itype) metas.push(s.itype);
+    if(s.work) metas.push('Arbeid: '+s.work+'min');
+    if(s.form) metas.push('Form: '+s.form+'/10');
+    if(s.exercises) metas.push(s.exercises.length+' øvelser');
+    const d=s.date.split('-');
+    return `<div class="log-entry"><div class="log-dot" style="background:${col}"></div><div class="log-info"><div class="log-top"><span class="log-type">${TYPES[s.type]||s.type}</span><span class="log-date">${d[2]}.${d[1]}.${d[0].slice(2)}</span></div><div class="log-meta">${metas.map(m=>`<span>${m}</span>`).join('')}</div>${s.comment?`<div class="log-comment">${s.comment}</div>`:''}</div><button class="del-btn" onclick="delSession(${s.id})">✕</button></div>`;
+  }).join('');
+}
+
+function delSession(id) {
+  if(!confirm('Slett denne økten?'))return;
+  sessions=sessions.filter(s=>s.id!==id);
+  localStorage.setItem('triatlon-sessions',JSON.stringify(sessions));
+  renderLog();
+}
+
+function renderStats() {
+  const total=sessions.length;
+  const totalMin=sessions.reduce((a,s)=>a+s.duration,0);
+  const wf=sessions.filter(s=>s.form);
+  const avgForm=wf.length?(wf.reduce((a,s)=>a+s.form,0)/wf.length).toFixed(1):'—';
+  const days=Math.max(0,Math.round((RACE-new Date())/86400000));
+  document.getElementById('stat-cards').innerHTML=[
+    ['Totale økter',total],['Total tid',totalMin>=60?Math.floor(totalMin/60)+'t '+totalMin%60+'min':totalMin+'min'],
+    ['Snitt form',avgForm+(avgForm!=='—'?'/10':'')],['Dager til race',days],
+  ].map(([l,v])=>`<div class="stat-card"><div class="stat-label">${l}</div><div class="stat-val">${v}</div></div>`).join('');
+
+  const typeMap={};Object.keys(TYPES).forEach(t=>typeMap[t]=0);
+  sessions.forEach(s=>{typeMap[s.type]=(typeMap[s.type]||0)+s.duration;});
+  const tKeys=Object.keys(typeMap).filter(k=>typeMap[k]>0);
+  if(charts.type) charts.type.destroy();
+  charts.type=new Chart(document.getElementById('c-type'),{type:'bar',data:{labels:tKeys.map(k=>TYPES[k]),datasets:[{data:tKeys.map(k=>typeMap[k]),backgroundColor:tKeys.map(k=>COLORS[k]+'BB'),borderColor:tKeys.map(k=>COLORS[k]),borderWidth:1.5,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#6b8099',font:{size:11}}},y:{ticks:{color:'#6b8099',font:{size:11}},beginAtZero:true,grid:{color:'rgba(255,255,255,0.05)'}}}},});
+
+  const fs=[...sessions].filter(s=>s.form).sort((a,b)=>a.date.localeCompare(b.date)).slice(-15);
+  if(charts.form) charts.form.destroy();
+  charts.form=new Chart(document.getElementById('c-form'),{type:'line',data:{labels:fs.map(s=>s.date.slice(5)),datasets:[{data:fs.map(s=>s.form),borderColor:'#3b9eff',backgroundColor:'rgba(59,158,255,0.1)',tension:0.4,pointRadius:4,pointBackgroundColor:'#3b9eff',fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#6b8099',font:{size:10},maxRotation:30}},y:{min:1,max:10,ticks:{stepSize:1,color:'#6b8099',font:{size:11}},grid:{color:'rgba(255,255,255,0.05)'}}}}});
+
+  function getWeek(d){const dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));dt.setUTCDate(dt.getUTCDate()+4-(dt.getUTCDay()||7));const y=new Date(Date.UTC(dt.getUTCFullYear(),0,1));return Math.ceil((((dt-y)/86400000)+1)/7);}
+  const wMap={};sessions.forEach(s=>{const d=new Date(s.date);const k=d.getFullYear()+'-'+String(getWeek(d)).padStart(2,'0');wMap[k]=(wMap[k]||0)+s.duration;});
+  const wKeys=Object.keys(wMap).sort().slice(-10);
+  if(charts.week) charts.week.destroy();
+  charts.week=new Chart(document.getElementById('c-week'),{type:'bar',data:{labels:wKeys.map(k=>'Uke '+k.split('-')[1]),datasets:[{data:wKeys.map(k=>wMap[k]),backgroundColor:'rgba(76,175,130,0.6)',borderColor:'#4caf82',borderWidth:1.5,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#6b8099',font:{size:11},maxRotation:0}},y:{ticks:{color:'#6b8099',font:{size:11}},beginAtZero:true,grid:{color:'rgba(255,255,255,0.05)'}}}}});
+}
+
+
+let currentWeekOffset = 0;
+
+function getCurrentProgramWeek() {
+  const start = new Date('2026-04-27');
+  const now = new Date();
+  const diff = Math.floor((now - start) / (7*24*3600*1000));
+  return Math.max(0, Math.min(13, diff));
+}
+
+function changeWeek(dir) {
+  const maxW = getCurrentProgramWeek();
+  currentWeekOffset = Math.max(-maxW, Math.min(13 - maxW, currentWeekOffset + dir));
+  renderWeekPlan();
+}
+
+function getWeekSessions(weekIdx) {
+  return SCHEDULE.filter(s => s.week === weekIdx + 1);
+}
+
+function getDayName(dateStr) {
+  const days = ['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
+  return days[new Date(dateStr).getDay()];
+}
+
+function isLogged(dateStr) {
+  return sessions.some(s => s.date === dateStr);
+}
+
+function renderWeekPlan() {
+  const weekIdx = getCurrentProgramWeek() + currentWeekOffset;
+  const week = weekIdx + 1;
+  if (week < 1 || week > 14) return;
+
+  const weekSessions = getWeekSessions(weekIdx);
+  const ph = weekSessions[0]?.phase || '';
+  const dl = weekSessions[0]?.deload || false;
+  const todayStr = today();
+
+  document.getElementById('uke-title').textContent = `Uke ${week} av 14`;
+  document.getElementById('uke-phase').textContent = ph + (dl ? ' · Rolig uke' : '');
+
+  const el = document.getElementById('uke-days');
+  el.innerHTML = weekSessions.map(s => {
+    const col = COLORS[s.type] || '#6b8099';
+    const isToday = s.date === todayStr;
+    const logged = isLogged(s.date);
+    const isPast = s.date < todayStr;
+    const dayName = getDayName(s.date);
+    const dateDisplay = s.date.split('-').slice(1).reverse().join('.');
+    const isRest = s.type === 'rest';
+
+    return `<div style="background:var(--surface);border:1px solid ${isToday ? col : 'var(--border)'};border-left:3px solid ${col};border-radius:var(--rad);padding:14px 16px;margin-bottom:10px;opacity:${isPast && !isToday ? '0.7' : '1'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div>
+          <span style="font-size:13px;font-weight:600;color:${isToday ? col : 'var(--text)'}">${dayName}</span>
+          <span style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-left:8px">${dateDisplay}</span>
+          ${isToday ? '<span style="font-size:10px;background:'+col+'22;color:'+col+';padding:2px 8px;border-radius:99px;margin-left:6px;font-weight:600">I DAG</span>' : ''}
+        </div>
+        ${logged ? '<span style="font-size:11px;color:#4caf82;font-weight:600">✓ Logget</span>' : (isPast && !isRest ? '<span style="font-size:11px;color:var(--muted)">Ikke logget</span>' : '')}
+      </div>
+      <div style="font-size:14px;font-weight:500;margin-bottom:${isRest?'0':'8px'}">${s.name}</div>
+      ${!isRest && s.duration ? `<div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:8px">ca. ${s.duration} min</div>` : ''}
+      ${!isRest ? `<div style="font-size:12px;color:var(--muted);line-height:1.6;white-space:pre-line">${s.desc}</div>` : '<div style="font-size:12px;color:var(--muted)">Hviledag – tøying, gåtur, mobilitet</div>'}
+      ${!isRest && !logged ? `<button class="prefill-btn" style="margin-top:10px" onclick="prefillDate('${s.date}','${s.type}',${s.duration||0})">Registrer økt ↗</button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function prefillDate(date, type, dur) {
+  switchTab('reg');
+  document.getElementById('f-date').value = date;
+  if (dur) document.getElementById('f-dur').value = dur;
+  const typeMap = {'swim':'swim','bike':'bike','run':'run','strength':'strength','brick':'brick','interval':'run','rest':'other'};
+  setType(typeMap[type] || 'other');
+  window.scrollTo(0, 0);
+}
+
+
+let currentStrWeek = 0;
+
+function changeStrWeek(dir) {
+  const maxW = getCurrentProgramWeek();
+  currentStrWeek = Math.max(-maxW, Math.min(13 - maxW, currentStrWeek + dir));
+  renderStrengthLog();
+}
+
+function getStrengthSaved(date, sessionName) {
+  const key = 'str-' + date + '-' + sessionName.replace(/\s/g,'');
+  try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch(e) { return null; }
+}
+
+function saveStrengthData(date, sessionName, data) {
+  const key = 'str-' + date + '-' + sessionName.replace(/\s/g,'');
+  localStorage.setItem(key, JSON.stringify(data));
+}
+
+function renderStrengthLog() {
+  const weekIdx = getCurrentProgramWeek() + currentStrWeek;
+  const week = weekIdx + 1;
+  if (week < 1 || week > 14) return;
+
+  const weekSessions = STRENGTH_LOG.filter(s => s.week === week);
+  const ph = weekSessions[0]?.phase || '';
+  const dl = weekSessions[0]?.deload || false;
+  document.getElementById('str-title').textContent = 'Uke ' + week + ' av 14';
+  document.getElementById('str-phase').textContent = ph + (dl ? ' - Rolig uke' : '');
+
+  const el = document.getElementById('str-sessions');
+  if (!weekSessions.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">-</div>Ingen styrkeøkter denne uken</div>'; return; }
+
+  el.innerHTML = weekSessions.map((s, si) => {
+    const saved = getStrengthSaved(s.date, s.session) || {};
+    const d = s.date.split('-');
+    const dayNames = ['Son','Man','Tir','Ons','Tor','Fre','Lor'];
+    const dayName = ['Sondag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lordag'][new Date(s.date).getDay()];
+    const isToday = s.date === today();
+    const isPast = s.date < today();
+
+    const exRows = s.exercises.map((ex, ei) => {
+      const sets = parseInt(ex.sets) || 3;
+      const setInputs = Array.from({length: sets}, (_, si2) => {
+        const savedSet = saved[ex.name]?.[si2] || {};
+        return '<div class="set-row"><span class="set-num">' + (si2+1) + '</span><input type="text" placeholder="' + ex.reps + '" value="' + (savedSet.reps||'') + '" data-week="' + week + '" data-session="' + si + '" data-ex="' + ei + '" data-set="' + si2 + '" data-field="reps" onchange="saveSet(this)" style="font-size:13px;padding:7px 8px"><input type="number" placeholder="kg" value="' + (savedSet.kg||'') + '" data-week="' + week + '" data-session="' + si + '" data-ex="' + ei + '" data-set="' + si2 + '" data-field="kg" onchange="saveSet(this)" step="0.5" style="font-size:13px;padding:7px 8px"><span></span></div>';
+      }).join('');
+      return '<div class="ex-block"><div style="font-size:13px;font-weight:600;margin-bottom:8px">' + ex.name + ' <span style="font-size:11px;color:var(--muted);font-weight:400">' + ex.sets + 'x' + ex.reps + '</span></div><div class="set-labels"><span></span><span>Reps/tid</span><span>Kg</span><span></span></div>' + setInputs + '</div>';
+    }).join('');
+
+    return '<div class="today-card" style="border-left:3px solid var(--strength);margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div><span style="font-size:13px;font-weight:600">' + s.session + '</span><span style="font-size:11px;color:var(--muted);font-family:DM Mono,monospace;margin-left:8px">' + d[2] + '.' + d[1] + ' ' + dayName + '</span>' + (isToday ? '<span style="font-size:10px;background:var(--strength)22;color:var(--strength);padding:2px 8px;border-radius:99px;margin-left:6px;font-weight:600">I DAG</span>' : '') + '</div></div>' + exRows + '</div>';
+  }).join('');
+}
+
+function saveSet(input) {
+  const week = parseInt(input.dataset.week);
+  const si = parseInt(input.dataset.session);
+  const ei = parseInt(input.dataset.ex);
+  const setIdx = parseInt(input.dataset.set);
+  const field = input.dataset.field;
+
+  const s = STRENGTH_LOG.filter(s2 => s2.week === week)[si];
+  if (!s) return;
+  const saved = getStrengthSaved(s.date, s.session) || {};
+  const exName = s.exercises[ei].name;
+  if (!saved[exName]) saved[exName] = {};
+  if (!saved[exName][setIdx]) saved[exName][setIdx] = {};
+  saved[exName][setIdx][field] = input.value;
+  saveStrengthData(s.date, s.session, saved);
+}
+
+init();
+</script>
+</body>
+</html>
