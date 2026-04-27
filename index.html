@@ -104,6 +104,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <nav class="nav">
   <button class="nav-btn active" onclick="switchTab('reg')">Registrer</button>
   <button class="nav-btn" onclick="switchTab('uke')">Ukeplan</button>
+  <button class="nav-btn" onclick="switchTab('oversikt')">Oversikt</button>
   <button class="nav-btn" onclick="switchTab('str')">Styrke</button>
   <button class="nav-btn" onclick="switchTab('log')">Logg</button>
   <button class="nav-btn" onclick="switchTab('stat')">Statistikk</button>
@@ -171,6 +172,11 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <button class="btn-sm" onclick="changeWeek(1)">Neste →</button>
   </div>
   <div id="uke-days"></div>
+</div>
+
+<!-- OVERSIKT -->
+<div class="panel" id="panel-oversikt">
+  <div id="oversikt-content"></div>
 </div>
 
 <!-- STYRKELOGG -->
@@ -283,10 +289,11 @@ function prefillFromPlan() {
 }
 
 function switchTab(t) {
-  document.querySelectorAll('.nav-btn').forEach((b,i)=>b.classList.toggle('active',['reg','uke','str','log','stat'][i]===t));
+  document.querySelectorAll('.nav-btn').forEach((b,i)=>b.classList.toggle('active',['reg','uke','oversikt','str','log','stat'][i]===t));
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-'+t).classList.add('active');
   if(t==='uke') renderWeekPlan();
+  if(t==='oversikt') renderOversikt();
   if(t==='str') renderStrengthLog();
   if(t==='log') renderLog();
   if(t==='stat') renderStats();
@@ -568,6 +575,112 @@ function saveSet(input) {
 }
 
 
+
+
+function renderOversikt() {
+  const el = document.getElementById('oversikt-content');
+  const days = ['Man','Tir','Ons','Tor','Fre','Lør','Søn'];
+  const phases = {};
+  SCHEDULE.forEach(s => {
+    if (!phases[s.week]) phases[s.week] = {week: s.week, phase: s.phase, deload: s.deload, days: {}};
+    const d = new Date(s.date).getDay();
+    const dayIdx = d === 0 ? 6 : d - 1;
+    phases[s.week].days[dayIdx] = s;
+  });
+
+  const todayStr = today();
+  const currentWeek = Object.values(phases).find(w =>
+    Object.values(w.days).some(s => s.date === todayStr)
+  )?.week;
+
+  // Phase color map
+  const phaseColors = {
+    'FTP-test': '#D6DCE4',
+    'Grunnlag': '#BDD7EE',
+    'Rolig uke': '#E2EFDA',
+    'Oppbygging': '#E2EFDA',
+    'Terskelblokk': '#FCE4D6',
+    'Topping': '#FFE699',
+    'Konkurranseuke': '#FFD700',
+  };
+
+  // Table HTML
+  let html2 = '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch">';
+  html2 += '<table style="width:100%;border-collapse:collapse;font-size:11px;min-width:600px">';
+
+  // Header row
+  html2 += '<tr><th style="padding:6px 8px;background:var(--surface);border:1px solid var(--border);text-align:left;font-size:11px;color:var(--muted);white-space:nowrap">Uke</th>';
+  html2 += '<th style="padding:6px 4px;background:var(--surface);border:1px solid var(--border);font-size:11px;color:var(--muted)">Fase</th>';
+  days.forEach(d => {
+    html2 += `<th style="padding:6px 4px;background:var(--surface);border:1px solid var(--border);font-size:11px;color:var(--muted);text-align:center">${d}</th>`;
+  });
+  html2 += '</tr>';
+
+  // Week rows
+  for (let w = 1; w <= 14; w++) {
+    const wd = phases[w];
+    if (!wd) continue;
+    const isCurrentWeek = wd.week === currentWeek;
+    const ph = wd.phase;
+    const bgColor = phaseColors[ph] || '#FFFFFF';
+    const rowStyle = isCurrentWeek ? 'outline:2px solid var(--accent);outline-offset:-1px;' : '';
+
+    html2 += `<tr style="${rowStyle}">`;
+    html2 += `<td style="padding:6px 8px;border:1px solid var(--border);background:${bgColor};font-weight:600;white-space:nowrap;color:var(--text)">`;
+    html2 += `Uke ${w}${isCurrentWeek ? ' <span style="font-size:9px;color:var(--accent);font-weight:700">◀</span>' : ''}`;
+    html2 += '</td>';
+    html2 += `<td style="padding:4px 2px;border:1px solid var(--border);background:${bgColor};font-size:9px;color:var(--muted);text-align:center;width:40px;max-width:40px;overflow:hidden">${ph.replace(' (deload)','').replace('Konkurranseuke','Konkurranse').replace('Terskelblokk','Terskel').replace('Grunnlag','Grunnlag').replace('Oppbygging','Oppbygg.').replace('Rolig uke','Rolig').replace('Topping','Topping').replace('FTP-test','FTP')}</td>`;
+
+    for (let di = 0; di < 7; di++) {
+      const s = wd.days[di];
+      const isToday = s?.date === todayStr;
+      const isRest = !s || s.type === 'rest';
+      const logged = s ? sessions.some(ls => ls.date === s.date) : false;
+      const isPast = s && s.date < todayStr;
+
+      const cellBg = isToday ? 'rgba(214,58,96,0.12)' : (isRest ? 'var(--surface2)' : bgColor);
+      const cellBorder = isToday ? '1px solid var(--accent)' : '1px solid var(--border)';
+
+      let cellText = '';
+      if (s && !isRest) {
+        // Shorten name for display
+        const shortName = s.name
+          .replace('Intervall + Styrke 1','Int+Styrke')
+          .replace('Løpeintervall (u/styrke)','Løpeintvl')
+          .replace('Overgangsøkt','Overgang')
+          .replace('Sykkel – distanse','Sykkel')
+          .replace('Svøm – klubb','Svøm')
+          .replace('Rolig løp','Rolig løp')
+          .replace(' ⬇','')
+          .replace('Lørenløpet 5 km','Lørenløpet')
+          .replace('Lampeland Backyard Ultra 18 km','Lampeland')
+          .replace('Sommernattsløpet 5 km','Sommernatt')
+          .replace('Konkurransedag','🏁 RACE')
+          .replace('FTP-test + Styrke 1','FTP-test');
+        cellText = `<span style="font-weight:${isToday?'600':'400'};color:${isToday?'var(--accent)':'var(--text)'}">${shortName}</span>`;
+        if (logged) cellText += '<span style="color:#4caf82;font-size:9px;margin-left:2px">✓</span>';
+        if (s.duration) cellText += `<br><span style="color:var(--muted);font-size:9px">${s.duration}min</span>`;
+      } else if (s?.name === 'Hvile' || s?.name === 'Hvil') {
+        cellText = '<span style="color:var(--muted);font-size:10px">—</span>';
+      }
+
+      html2 += `<td style="padding:4px 4px;border:${cellBorder};background:${cellBg};text-align:center;vertical-align:top;cursor:${s&&!isRest?'pointer':'default'}" ${s&&!isRest?`onclick="switchTab('uke');currentWeekOffset=${w-1-Math.max(0,Math.min(13,(new Date()-new Date('2026-04-27'))/(7*24*3600*1000)|0))};renderWeekPlan()"`:''}>`;
+      html2 += cellText;
+      html2 += '</td>';
+    }
+    html2 += '</tr>';
+  }
+
+  html2 += '</table></div>';
+  html2 += '<div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--muted)">';
+  Object.entries(phaseColors).forEach(([ph,col]) => {
+    html2 += `<span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:${col};border-radius:2px;display:inline-block;border:1px solid rgba(0,0,0,0.1)"></span>${ph.replace(' (deload)','')}</span>`;
+  });
+  html2 += '<span style="display:flex;align-items:center;gap:4px"><span style="color:#4caf82">✓</span> Logget</span>';
+  html2 += '</div>';
+
+  el.innerHTML = html2;
+}
 
 init();
 </script>
